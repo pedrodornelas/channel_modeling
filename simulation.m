@@ -29,6 +29,27 @@ tau_n_pp = exprnd( mu_delay, [num_mpcs, 1] );
 tau_n_p = tau_n_pp - min( tau_n_pp );
 tau_n = sort( tau_n_p );
 
+% ------------------------------------------------
+%% Plot PDF Delay
+% ------------------------------------------------
+% figure(1)
+% num_delay_samples = 1e6;
+% tau_n_pdf = exprnd( mu_delay, [num_delay_samples, 1] );
+% tau_n_us = tau_n_pdf;
+
+% % max(tau_n_pdf_pdf)
+% delay = linspace(0, max(tau_n_pdf), 100) ;
+% pdf_delay = ( 1 / mu_delay ) * exp( - delay ./ mu_delay );
+
+% histogram(tau_n_us, 100, 'normalization', 'pdf')
+% hold on
+% plot(delay , pdf_delay, 'LineWidth', 2, 'Color', 'r')
+
+% title('Histograma de Atrasos e PDF Teórica');
+% xlabel('Atraso');
+% ylabel('Dsitribuição');
+% grid on
+
 %% MPCs powers
 
 % Power stats
@@ -58,91 +79,6 @@ alpha2_n = alpha2_n_p;
 % Reverse computation of the Rice factor
 rf_c = alpha2_n_p(1) / ( sum( alpha2_n_p( 2 : end ) ) );
 
-%% MPC Angles
-
-% Angle stats
-[azimuth_mean, azimuth_std, elevation_mean, elevation_std] = get_angular_stats( freq_ghz, env_type );
-
-% Azimuth angular scattering
-sigma_theta = normrnd( azimuth_mean, azimuth_std, [1, 1] );
-sigma_theta_rad = (pi / 180) * (10 ^ sigma_theta);
-
-% Azimuth samples
-alpha_max = max( alpha2_n );
-theta_n_p = 1.42 * sigma_theta_rad * sqrt( -log( alpha2_n ./ alpha_max ) );
-
-% Random azimuth varing samples
-un = randsample( [-1, 1], num_mpcs, true)';
-% Flutuacoes angulares
-yn = normrnd(0, sigma_theta_rad/7, [num_mpcs, 1]);
-% Final azimuth angles
-theta_n = un .* theta_n_p + yn;
-% Los
-theta_n = theta_n - theta_n(1);
-
-% Elevation angular scattering
-sigma_phi = normrnd( elevation_mean, elevation_std, [1, 1] );
-sigma_phi_rad = (pi / 180) * (10 ^ sigma_phi);
-
-% Elevation samples
-phi_n_p = -sigma_phi_rad * log(alpha2_n ./ alpha_max);
-
-% Random elevation variation
-un = randsample( [-1, 1], num_mpcs, true)';
-% Angular flutuation
-yn = normrnd(0, sigma_theta_rad/7, [num_mpcs, 1]);
-% Medium elevation
-a = 0;
-b = pi/2;
-phi_bar = a + (b-a) .* rand(1, 1);
-
-% Final elevation angles
-phi_n = un .* phi_n_p + yn;
-% Los
-phi_n = phi_n - phi_n(1) + phi_bar;
-
-
-%% Angles vectors
-rn = [cos(theta_n) .* sin(phi_n), sin(theta_n) .* sin(phi_n), cos(phi_n)];
-
-for i = 1 : num_mpcs
-    if i == 1
-        style = "b-^"
-    else
-        style = "r-o"
-    end
-    plot3( [0 rn(i, 1)], [0 rn(i, 2)], [0 rn(i, 3)], style, 'LineWidth', 1.5 );
-    hold on;
-end
-xlabel('Eixo X'), ylabel('Eixo Y'), zlabel('Eixo Z')
-set(gca,'CameraPosition',[1 2 3]);
-ax = gca;
-ax.TickLabelInterpreter = 'latex';
-grid on
-
-
-% ------------------------------------------------
-%% Plot PDF Delay
-% ------------------------------------------------
-% figure(1)
-% num_delay_samples = 1e6;
-% tau_n_pdf = exprnd( mu_delay, [num_delay_samples, 1] );
-% tau_n_us = tau_n_pdf;
-
-% % max(tau_n_pdf_pdf)
-% delay = linspace(0, max(tau_n_pdf), 100) ;
-% pdf_delay = ( 1 / mu_delay ) * exp( - delay ./ mu_delay );
-
-% histogram(tau_n_us, 100, 'normalization', 'pdf')
-% hold on
-% plot(delay , pdf_delay, 'LineWidth', 2, 'Color', 'r')
-
-% title('Histograma de Atrasos e PDF Teórica');
-% xlabel('Atraso');
-% ylabel('Dsitribuição');
-% grid on
-
-
 % ------------------------------------------------
 %% Plot PDP
 % ------------------------------------------------
@@ -164,6 +100,28 @@ grid on
 
 % % Put y-scale on log
 % set(ax,'yscal','log');
+
+%% MPC Angles
+
+% Angle stats
+[azimuth_mean, azimuth_std, elevation_mean, elevation_std] = get_angular_stats( freq_ghz, env_type );
+
+%% Azimuth angular scattering
+sigma_theta = normrnd( azimuth_mean, azimuth_std, [1, 1] );
+sigma_theta_rad = (pi / 180) * (10 ^ sigma_theta);
+
+% Azimuth samples
+alpha_max = max( alpha2_n );
+theta_n_p = 1.42 * sigma_theta_rad * sqrt( -log( alpha2_n ./ alpha_max ) );
+
+% Random azimuth varing samples
+un = randsample( [-1, 1], num_mpcs, true)';
+% Flutuacoes angulares
+yn = normrnd(0, sigma_theta_rad/7, [num_mpcs, 1]);
+% Final azimuth angles
+theta_n = un .* theta_n_p + yn;
+% Los
+theta_n = theta_n - theta_n(1);
 
 % ------------------------------------------------
 %% Plot Azimuth Angles
@@ -203,6 +161,27 @@ grid on
 % ax.TickLabelInterpreter = 'latex';
 % grid on
 
+%% Elevation angular scattering
+sigma_phi = normrnd( elevation_mean, elevation_std, [1, 1] );
+sigma_phi_rad = (pi / 180) * (10 ^ sigma_phi);
+
+% Elevation samples
+phi_n_p = -sigma_phi_rad * log(alpha2_n ./ alpha_max);
+
+% Random elevation variation
+un = randsample( [-1, 1], num_mpcs, true)';
+% Angular flutuation
+yn = normrnd(0, sigma_theta_rad/7, [num_mpcs, 1]);
+% Medium elevation
+a = 0;
+b = pi/2;
+phi_bar = a + (b-a) .* rand(1, 1);
+
+% Final elevation angles
+phi_n = un .* phi_n_p + yn;
+% Los
+phi_n = phi_n - phi_n(1) + phi_bar;
+
 % ------------------------------------------------
 %% Plot Elevation Angles
 % ------------------------------------------------
@@ -241,11 +220,107 @@ grid on
 % ylabel('Pot{\^{e}}ncia', 'Interpreter', 'Latex');
 % ax = gca;
 % ax.TickLabelInterpreter = 'latex';
+% ax.FontSize = 14;
 % grid on
 
 
-%% Auxiliar Functions
+% Angles vectors
+rn = [cos(theta_n) .* sin(phi_n), sin(theta_n) .* sin(phi_n), cos(phi_n)];
 
+%% Doppler efects
+v_rx = 10; % m/s
+c = 299792458;
+lambda = c / (freq_ghz * (10^9));
+
+a = 0;
+b = 2*pi;
+theta_v = a + (b-a) .* rand(1, 1); % number between 0 and 2*pi
+a = 0;
+b = pi;
+phi_v = a + (b-a) .* rand(1, 1); % number between 0 and pi
+
+vector_rx = v_rx * [cos(theta_v) * sin(phi_v), sin(theta_v) * sin(phi_v), cos(phi_v)];
+
+% %% Plot angle vectors
+% figure(7)
+% for i = 1 : num_mpcs
+%     if i == 1
+%         style = "b-^";
+%     else
+%         style = "r-o";
+%     end
+%     plot3( [0 rn(i, 1)], [0 rn(i, 2)], [0 rn(i, 3)], style, 'LineWidth', 1.5 );
+%     hold on;
+% end
+% xlabel('x'), ylabel('y'), zlabel('z')
+% set(gca,'CameraPosition',[1 2 3]);
+% ax = gca;
+% ax.TickLabelInterpreter = 'latex';
+% ax.FontSize = 14;
+% grid on
+% style = "g->";
+% plot3( [0 vector_rx(1, 1)]/v_rx, [0 vector_rx(1, 2)]/v_rx, [0 vector_rx(1, 3)]/v_rx, style, 'LineWidth', 1.5);
+% blanck_labels = repmat({''}, 1, num_mpcs-2);
+% legend(['LoS','NLoS', blanck_labels, 'Direção Velocidade'])
+
+% % Doppler shift
+vn = (1/lambda) .* (rn * vector_rx');
+vn = sum(vn, 2);
+
+%% Plot doppler shift
+% figure(8)
+% stem( vn(1), alpha2_n(1), '^', 'Linewidth', 2.0, 'Color', 'blue', 'MarkerFacecolor', 'blue');
+% hold on
+% stem( vn(2:num_mpcs) , alpha2_n(2:num_mpcs), '^', 'Linewidth', 1.0, 'Color', 'k', 'MarkerFacecolor', 'k' );
+% ylim([1e-8,1]);
+% % xlim([-6 * (10 .^ sigma_theta), 6 * (10 .^ sigma_theta)]);
+% set(gca,'yscal','log');
+% grid on
+% title("$v_{rx}="+num2str(v_rx)+"$ m/s, $f_c = "+num2str(freq_ghz)+"$ GHz", 'Interpreter', 'Latex')
+% xlabel('Desvio Doppler - $\nu$ (Hz)', 'Interpreter', 'Latex');
+% ylabel('Potencia', 'Interpreter', 'Latex');
+% legend('LoS', 'NLoS')
+% ax = gca;
+% ax.TickLabelInterpreter = 'latex';
+% ax.FontSize = 14;
+% grid on
+
+%% MPCs Phases
+varphi_n = 2*pi* ((freq_ghz + vn) .* tau_n) - 2*pi*vn;
+
+%% Signal transmitted
+delta = 1;
+t_pulse = 2*delta;
+t = linspace(0, 4*delta, 1e6);
+signal_tx = zeros(length(t), 1);
+for i = 1 : length(t)
+    if t(i) >= 0 & t(i) <= t_pulse
+        signal_tx(i) = 1;
+    end
+end
+
+figure(9)
+plot(t, signal_tx, 'Color', 'k', 'Linewidth', 1.5)
+xticks(-2*delta:delta:4*delta)
+xticklabels({'$-2\delta_t$', '$-\delta_t$', '$0$', '$\delta_t$', '$2\delta_t$', '$3\delta_t$', '$4\delta_t$'})
+title('Sinal Transmitido', 'Interpreter', 'Latex')
+ylabel('$s(t)$', 'Interpreter', 'Latex')
+xlabel('$t$ [s]', 'Interpreter', 'Latex')
+ax = gca;
+ax.TickLabelInterpreter = 'latex';
+ax.FontSize = 14;
+grid on
+
+
+
+
+
+
+
+
+% ---------------------------------------
+%% Auxiliar Functions
+% ---------------------------------------
 function [rmsds_mean, rmsds_std, r_prop_param] = get_delay_stats( freq_ghz, env_type )
     switch env_type
         case 'UMi_LoS'
