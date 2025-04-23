@@ -288,24 +288,37 @@ vn = sum(vn, 2);
 %% MPCs Phases
 varphi_n = 2*pi* ((freq_ghz + vn) .* tau_n) - 2*pi*vn;
 
+
+
+
+
+
 %% Signal transmitted
-delta = 1;
-t_pulse = 2*delta;
-t = linspace(0, 4*delta, 1e6);
-signal_tx = zeros(length(t), 1);
-for i = 1 : length(t)
-    if t(i) >= 0 & t(i) <= t_pulse
-        signal_tx(i) = 1;
-    end
+delta = 1e-7;
+pulse_width = 1*delta;
+num_samples = 1e5;
+t = linspace(0, 5*delta, num_samples);
+[signal_tx] = generate_pulse(0, t, pulse_width);
+
+signal_rx = zeros(num_samples, num_mpcs);
+for i = 1 : num_mpcs
+    delayed_signal = generate_pulse(tau_n(i), t, pulse_width);
+    signal_rx(:, i) = alpha2_n(i) * exp(-varphi_n(i) * 1j) * delayed_signal;
 end
 
+scattered_signal_rx = sum(signal_rx, 2);
+
 figure(9)
-plot(t, signal_tx, 'Color', 'k', 'Linewidth', 1.5)
-xticks(-2*delta:delta:4*delta)
-xticklabels({'$-2\delta_t$', '$-\delta_t$', '$0$', '$\delta_t$', '$2\delta_t$', '$3\delta_t$', '$4\delta_t$'})
+plot(t, abs(signal_tx), 'Color', 'b', 'Linewidth', 1.5)
+hold on
+plot(t, abs(scattered_signal_rx), 'Color', 'r', 'Linewidth', 1.2)
+xticks(-2*delta:delta:max(t))
+xticklabels({'$-2\delta_t$', '$-\delta_t$', '$0$', '$\delta_t$', '$2\delta_t$', '$3\delta_t$', '$4\delta_t$', '$5\delta_t$', '$6\delta_t$'})
 title('Sinal Transmitido', 'Interpreter', 'Latex')
 ylabel('$s(t)$', 'Interpreter', 'Latex')
 xlabel('$t$ [s]', 'Interpreter', 'Latex')
+title("$\delta=10^{-7} s, \sigma_{\tau}="+num2str(rmsds * 1e9)+"ns$", 'Interpreter', 'Latex')
+legend('TX', 'RX')
 ax = gca;
 ax.TickLabelInterpreter = 'latex';
 ax.FontSize = 14;
@@ -407,5 +420,14 @@ function [azimuth_mean, azimuth_std, elevation_mean, elevation_std] = get_angula
             
         otherwise
             error( 'Ambiente inválido.' )
+    end
+end
+
+function [signal] = generate_pulse( delay, t, pulse_width )
+    signal = zeros(length(t), 1);
+    for i = 1 : length(t)
+        if t(i) >= delay && t(i) <= pulse_width + delay
+            signal(i) = 1;
+        end
     end
 end
