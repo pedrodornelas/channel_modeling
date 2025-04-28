@@ -32,23 +32,23 @@ tau_n = sort( tau_n_p );
 % ------------------------------------------------
 %% Plot PDF Delay
 % ------------------------------------------------
-% figure(1)
-% num_delay_samples = 1e6;
-% tau_n_pdf = exprnd( mu_delay, [num_delay_samples, 1] );
-% tau_n_us = tau_n_pdf;
+figure(1)
+num_delay_samples = 1e6;
+tau_n_pdf = exprnd( mu_delay, [num_delay_samples, 1] );
+tau_n_us = tau_n_pdf;
 
-% % max(tau_n_pdf_pdf)
-% delay = linspace(0, max(tau_n_pdf), 100) ;
-% pdf_delay = ( 1 / mu_delay ) * exp( - delay ./ mu_delay );
+% max(tau_n_pdf_pdf)
+delay = linspace(0, max(tau_n_pdf), 100) ;
+pdf_delay = ( 1 / mu_delay ) * exp( - delay ./ mu_delay );
 
-% histogram(tau_n_us, 100, 'normalization', 'pdf')
-% hold on
-% plot(delay , pdf_delay, 'LineWidth', 2, 'Color', 'r')
+histogram(tau_n_us, 100, 'normalization', 'pdf')
+hold on
+plot(delay , pdf_delay, 'LineWidth', 2, 'Color', 'r')
 
-% title('Histograma de Atrasos e PDF Teórica');
-% xlabel('Atraso');
-% ylabel('Dsitribuição');
-% grid on
+title('Histograma de Atrasos e PDF Teórica');
+xlabel('Atraso');
+ylabel('Dsitribuição');
+grid on
 
 %% MPCs powers
 
@@ -64,8 +64,14 @@ power_c = ( r_prop_param - 1 ) / mu_delay;
 alpha2_n_p = exp( - tau_n * power_c ) .* xi_n;
 
 % Generate a Rice factor sample
-rf_db = normrnd( rf_mean, rf_std, [1,1] );
-rf = 10.^( rf_db / 10 ); % Convert to linear
+if env_type == "UMi_NLoS" || env_type == "UMa_NLoS"
+    rf_db = -inf;
+    rf = 0;
+else 
+    rf_db = normrnd( rf_mean, rf_std, [1,1] );
+    rf_db = 2; % testando com fato de rice fixo
+    rf = 10.^( rf_db / 10 ); % Convert to linear
+end
 
 % Scattered power
 omega_c_s = sum( alpha2_n_p(2:end) );
@@ -82,24 +88,24 @@ rf_c = alpha2_n_p(1) / ( sum( alpha2_n_p( 2 : end ) ) );
 % ------------------------------------------------
 %% Plot PDP
 % ------------------------------------------------
-% figure(2)
-% stem( tau_n / 1e-6, alpha2_n, '^', 'Color', 'k', 'Linewidth', 1.5 );
-% hold on
-% stem( tau_n(1) / 1e-6, alpha2_n(1), '^', 'Color', 'blue', 'Linewidth', 1.5 );
+figure(2)
+stem( tau_n / 1e-6, alpha2_n, '^', 'Color', 'k', 'Linewidth', 1.5 );
+hold on
+stem( tau_n(1) / 1e-6, alpha2_n(1), '^', 'Color', 'blue', 'Linewidth', 1.5 );
 
-% ylim([1e-10, 1]);
-% % xlim([0, 10]);
+ylim([1e-10, 1]);
+% xlim([0, 10]);
 
-% xlabel( 'Atraso multipercurso -- $\tau$ ($\mu$s)', 'Interpreter', 'Latex', 'Fontsize', 13 );
-% ylabel( 'Pot{\^{e}}ncia multipercurso', 'Interpreter', 'Latex', 'Fontsize', 13 );
-% grid on
+xlabel( 'Atraso multipercurso -- $\tau$ ($\mu$s)', 'Interpreter', 'Latex', 'Fontsize', 13 );
+ylabel( 'Pot{\^{e}}ncia multipercurso', 'Interpreter', 'Latex', 'Fontsize', 13 );
+grid on
 
-% ax = gca;
-% ax.TickLabelInterpreter = 'Latex';
-% ax.FontSize = 14;
+ax = gca;
+ax.TickLabelInterpreter = 'Latex';
+ax.FontSize = 14;
 
-% % Put y-scale on log
-% set(ax,'yscal','log');
+% Put y-scale on log
+set(ax,'yscal','log');
 
 %% MPC Angles
 
@@ -121,45 +127,48 @@ yn = normrnd(0, sigma_theta_rad/7, [num_mpcs, 1]);
 % Final azimuth angles
 theta_n = un .* theta_n_p + yn;
 % Los
+if (env_type == "UMi_NLoS") || (env_type == "UMa_NLoS")
+    theta_n(1) = 0;
+end
 theta_n = theta_n - theta_n(1);
 
 % ------------------------------------------------
 %% Plot Azimuth Angles
 % ------------------------------------------------
-% figure(3)
+figure(3)
 
-% for n = 1 : length( theta_n )
-% %for n = 1 : 5   
+for n = 1 : length( theta_n )
+%for n = 1 : 5   
 
-%     power_x = 10 * log10( alpha2_n(n) / min( alpha2_n ) );
-%     if n == 1 
-%         polarplot( [theta_n(n),theta_n(n)], [0,power_x], '-o', 'MarkerSize', 5, 'LineWidth', 1, 'Color', 'blue' );
-%     else
-%         polarplot( [theta_n(n),theta_n(n)], [0,power_x], '-o', 'MarkerSize', 5, 'LineWidth', 1, 'Color', 'red' );
-%     end
+    power_x = 10 * log10( alpha2_n(n) / min( alpha2_n ) );
+    if n == 1 
+        polarplot( [theta_n(n),theta_n(n)], [0,power_x], '-o', 'MarkerSize', 5, 'LineWidth', 1, 'Color', 'blue' );
+    else
+        polarplot( [theta_n(n),theta_n(n)], [0,power_x], '-o', 'MarkerSize', 5, 'LineWidth', 1, 'Color', 'red' );
+    end
     
-%     hold on
-% end
-% ax = gca;
-% ax.TickLabelInterpreter = 'latex';
-% ax.LineWidth = 2;
-% ax.ThetaTickLabel = {'0'; '30'; '60'; '90'; '120'; '150'; '180'; '210'; '240'; '270'; '300'; '330';};
-% title('Espalhamento angular em azimute', 'Interpreter', 'Latex');
-% grid on
+    hold on
+end
+ax = gca;
+ax.TickLabelInterpreter = 'latex';
+ax.LineWidth = 2;
+ax.ThetaTickLabel = {'0'; '30'; '60'; '90'; '120'; '150'; '180'; '210'; '240'; '270'; '300'; '330';};
+title('Espalhamento angular em azimute', 'Interpreter', 'Latex');
+grid on
 
-% figure(4)
-% stem( rad2deg( theta_n ), alpha2_n, '^', 'Linewidth', 1.0, 'Color', 'k', 'MarkerFacecolor', 'k' );
-% hold on
-% stem( rad2deg( theta_n(1) ), alpha2_n(1), '^', 'Linewidth', 2.0, 'Color', 'blue', 'MarkerFacecolor', 'blue' );
-% ylim([1e-8,1]);
-% xlim([-6 * (10 .^ sigma_theta), 6 * (10 .^ sigma_theta)]);
-% set(gca,'yscal','log');
-% grid on
-% xlabel('{\^{A}}ngulos de chegada em azimute ($^{\circ}$)', 'Interpreter', 'Latex');
-% ylabel('Pot{\^{e}}ncia', 'Interpreter', 'Latex');
-% ax = gca;
-% ax.TickLabelInterpreter = 'latex';
-% grid on
+figure(4)
+stem( rad2deg( theta_n ), alpha2_n, '^', 'Linewidth', 1.0, 'Color', 'k', 'MarkerFacecolor', 'k' );
+hold on
+stem( rad2deg( theta_n(1) ), alpha2_n(1), '^', 'Linewidth', 2.0, 'Color', 'blue', 'MarkerFacecolor', 'blue' );
+ylim([1e-8,1]);
+xlim([-6 * (10 .^ sigma_theta), 6 * (10 .^ sigma_theta)]);
+set(gca,'yscal','log');
+grid on
+xlabel('{\^{A}}ngulos de chegada em azimute ($^{\circ}$)', 'Interpreter', 'Latex');
+ylabel('Pot{\^{e}}ncia', 'Interpreter', 'Latex');
+ax = gca;
+ax.TickLabelInterpreter = 'latex';
+grid on
 
 %% Elevation angular scattering
 sigma_phi = normrnd( elevation_mean, elevation_std, [1, 1] );
@@ -179,49 +188,52 @@ phi_bar = a + (b-a) .* rand(1, 1);
 
 % Final elevation angles
 phi_n = un .* phi_n_p + yn;
+if (env_type == "UMi_NLoS") || (env_type == "UMa_NLoS")
+    phi_n(1) = 0;
+end
 % Los
 phi_n = phi_n - phi_n(1) + phi_bar;
 
 % ------------------------------------------------
 %% Plot Elevation Angles
 % ------------------------------------------------
-% figure(5)
+figure(5)
 
-% for n = 1 : length( phi_n )
-% %for n = 1 : 5   
+for n = 1 : length( phi_n )
+%for n = 1 : 5   
 
-%     power_x = 10 * log10( alpha2_n(n) / min( alpha2_n ) );
-%     if n == 1 
-%         polarplot( [phi_n(n),phi_n(n)], [0,power_x], '-o', 'MarkerSize', 5, 'LineWidth', 1, 'Color', 'blue' );
-%     else
-%         polarplot( [phi_n(n),phi_n(n)], [0,power_x], '-o', 'MarkerSize', 5, 'LineWidth', 1, 'Color', 'red' );
-%     end
+    power_x = 10 * log10( alpha2_n(n) / min( alpha2_n ) );
+    if n == 1 
+        polarplot( [phi_n(n),phi_n(n)], [0,power_x], '-o', 'MarkerSize', 5, 'LineWidth', 1, 'Color', 'blue' );
+    else
+        polarplot( [phi_n(n),phi_n(n)], [0,power_x], '-o', 'MarkerSize', 5, 'LineWidth', 1, 'Color', 'red' );
+    end
     
-%     hold on
-% end
+    hold on
+end
 
-% ax = gca;
-% ax.TickLabelInterpreter = 'latex';
-% ax.LineWidth = 2;
-% ax.ThetaTickLabel = {'0'; '30'; '60'; '90'; '120'; '150'; '180'; '210'; '240'; '270'; '300'; '330';};
-% title('Espalhamento angular em elevacao', 'Interpreter', 'Latex');
-% grid on
+ax = gca;
+ax.TickLabelInterpreter = 'latex';
+ax.LineWidth = 2;
+ax.ThetaTickLabel = {'0'; '30'; '60'; '90'; '120'; '150'; '180'; '210'; '240'; '270'; '300'; '330';};
+title('Espalhamento angular em elevacao', 'Interpreter', 'Latex');
+grid on
 
-% figure(6)
-% stem( rad2deg( phi_n ), alpha2_n, '^', 'Linewidth', 1.0, 'Color', 'k', 'MarkerFacecolor', 'k' );
-% hold on
-% stem( rad2deg( phi_n(1) ), alpha2_n(1), '^', 'Linewidth', 2.0, 'Color', 'blue', 'MarkerFacecolor', 'blue' );
-% ylim([1e-8,1]);
-% xlim([-6 * (10 .^ sigma_theta), 6 * (10 .^ sigma_theta)]);
-% set(gca,'yscal','log');
-% grid on
-% % title()
-% xlabel('{\^{A}}ngulos de chegada em Elevacao ($^{\circ}$)', 'Interpreter', 'Latex');
-% ylabel('Pot{\^{e}}ncia', 'Interpreter', 'Latex');
-% ax = gca;
-% ax.TickLabelInterpreter = 'latex';
-% ax.FontSize = 14;
-% grid on
+figure(6)
+stem( rad2deg( phi_n ), alpha2_n, '^', 'Linewidth', 1.0, 'Color', 'k', 'MarkerFacecolor', 'k' );
+hold on
+stem( rad2deg( phi_n(1) ), alpha2_n(1), '^', 'Linewidth', 2.0, 'Color', 'blue', 'MarkerFacecolor', 'blue' );
+ylim([1e-8,1]);
+xlim([-6 * (10 .^ sigma_theta), 6 * (10 .^ sigma_theta)]);
+set(gca,'yscal','log');
+grid on
+% title()
+xlabel('{\^{A}}ngulos de chegada em Elevacao ($^{\circ}$)', 'Interpreter', 'Latex');
+ylabel('Pot{\^{e}}ncia', 'Interpreter', 'Latex');
+ax = gca;
+ax.TickLabelInterpreter = 'latex';
+ax.FontSize = 14;
+grid on
 
 
 % Angles vectors
@@ -241,49 +253,49 @@ phi_v = a + (b-a) .* rand(1, 1); % number between 0 and pi
 
 vector_rx = v_rx * [cos(theta_v) * sin(phi_v), sin(theta_v) * sin(phi_v), cos(phi_v)];
 
-% %% Plot angle vectors
-% figure(7)
-% for i = 1 : num_mpcs
-%     if i == 1
-%         style = "b-^";
-%     else
-%         style = "r-o";
-%     end
-%     plot3( [0 rn(i, 1)], [0 rn(i, 2)], [0 rn(i, 3)], style, 'LineWidth', 1.5 );
-%     hold on;
-% end
-% xlabel('x'), ylabel('y'), zlabel('z')
-% set(gca,'CameraPosition',[1 2 3]);
-% ax = gca;
-% ax.TickLabelInterpreter = 'latex';
-% ax.FontSize = 14;
-% grid on
-% style = "g->";
-% plot3( [0 vector_rx(1, 1)]/v_rx, [0 vector_rx(1, 2)]/v_rx, [0 vector_rx(1, 3)]/v_rx, style, 'LineWidth', 1.5);
-% blanck_labels = repmat({''}, 1, num_mpcs-2);
-% legend(['LoS','NLoS', blanck_labels, 'Direção Velocidade'])
+%% Plot angle vectors
+figure(7)
+for i = 1 : num_mpcs
+    if i == 1
+        style = "b-^";
+    else
+        style = "r-o";
+    end
+    plot3( [0 rn(i, 1)], [0 rn(i, 2)], [0 rn(i, 3)], style, 'LineWidth', 1.5 );
+    hold on;
+end
+xlabel('x'), ylabel('y'), zlabel('z')
+set(gca,'CameraPosition',[1 2 3]);
+ax = gca;
+ax.TickLabelInterpreter = 'latex';
+ax.FontSize = 14;
+grid on
+style = "g->";
+plot3( [0 vector_rx(1, 1)]/v_rx, [0 vector_rx(1, 2)]/v_rx, [0 vector_rx(1, 3)]/v_rx, style, 'LineWidth', 1.5);
+blanck_labels = repmat({''}, 1, num_mpcs-2);
+legend(['LoS','NLoS', blanck_labels, 'Direção Velocidade'])
 
 % % Doppler shift
 vn = (1/lambda) .* (rn * vector_rx');
 vn = sum(vn, 2);
 
-%% Plot doppler shift
-% figure(8)
-% stem( vn(1), alpha2_n(1), '^', 'Linewidth', 2.0, 'Color', 'blue', 'MarkerFacecolor', 'blue');
-% hold on
-% stem( vn(2:num_mpcs) , alpha2_n(2:num_mpcs), '^', 'Linewidth', 1.0, 'Color', 'k', 'MarkerFacecolor', 'k' );
-% ylim([1e-8,1]);
-% % xlim([-6 * (10 .^ sigma_theta), 6 * (10 .^ sigma_theta)]);
-% set(gca,'yscal','log');
-% grid on
-% title("$v_{rx}="+num2str(v_rx)+"$ m/s, $f_c = "+num2str(freq_ghz)+"$ GHz", 'Interpreter', 'Latex')
-% xlabel('Desvio Doppler - $\nu$ (Hz)', 'Interpreter', 'Latex');
-% ylabel('Potencia', 'Interpreter', 'Latex');
-% legend('LoS', 'NLoS')
-% ax = gca;
-% ax.TickLabelInterpreter = 'latex';
-% ax.FontSize = 14;
-% grid on
+% Plot doppler shift
+figure(8)
+stem( vn(1), alpha2_n(1), '^', 'Linewidth', 2.0, 'Color', 'blue', 'MarkerFacecolor', 'blue');
+hold on
+stem( vn(2:num_mpcs) , alpha2_n(2:num_mpcs), '^', 'Linewidth', 1.0, 'Color', 'k', 'MarkerFacecolor', 'k' );
+ylim([1e-8,1]);
+% xlim([-6 * (10 .^ sigma_theta), 6 * (10 .^ sigma_theta)]);
+set(gca,'yscal','log');
+grid on
+title("$v_{rx}="+num2str(v_rx)+"$ m/s, $f_c = "+num2str(freq_ghz)+"$ GHz", 'Interpreter', 'Latex')
+xlabel('Desvio Doppler - $\nu$ (Hz)', 'Interpreter', 'Latex');
+ylabel('Potencia', 'Interpreter', 'Latex');
+legend('LoS', 'NLoS')
+ax = gca;
+ax.TickLabelInterpreter = 'latex';
+ax.FontSize = 14;
+grid on
 
 %% MPCs Phases
 varphi_n = 2*pi* ((freq_ghz + vn) .* tau_n) - 2*pi*vn;
@@ -294,11 +306,44 @@ varphi_n = 2*pi* ((freq_ghz + vn) .* tau_n) - 2*pi*vn;
 
 
 %% Signal transmitted
-delta = 1e-7;
+delta = 1e-8;
 pulse_width = 1*delta;
 num_samples = 1e5;
 t = linspace(0, 5*delta, num_samples);
 [signal_tx] = generate_pulse(0, t, pulse_width);
+
+% Frequency analysis
+f = linspace(-5/delta, 5/delta, num_samples);
+signal_tx_freq = delta * exp( -1i * pi * f * delta) .* sin( pi * f * delta) ./ (pi * f * delta);
+
+figure(9)
+subplot(2, 1, 1);
+plot(t, abs(signal_tx), 'Color', 'b', 'Linewidth', 1.5)
+xticks(-2*delta:delta:max(t))
+xticklabels({'$-2\delta_t$', '$-\delta_t$', '$0$', '$\delta_t$', '$2\delta_t$', '$3\delta_t$', '$4\delta_t$', '$5\delta_t$', '$6\delta_t$'})
+title('Sinal Transmitido', 'Interpreter', 'Latex')
+ylabel('$s(t)$', 'Interpreter', 'Latex')
+xlabel('$t$ [s]', 'Interpreter', 'Latex')
+legend('TX')
+ax = gca;
+ax.TickLabelInterpreter = 'latex';
+ax.FontSize = 14;
+grid on
+
+subplot(2, 1, 2);
+plot(f, abs(signal_tx_freq), 'Color', 'b', 'Linewidth', 1.5)
+xticks(-6/delta:1/delta:6/delta)
+xticklabels({'$-6/\delta_t$', '$-5/\delta_t$','$-4/\delta_t$', '$-3/\delta_t$', '$-2/\delta_t$', '$-1/\delta_t$', '$0$', '$1/\delta_t$', '$2/\delta_t$', '$3/\delta_t$', '$4/\delta_t$', '$5/\delta_t$', '$6/\delta_t$'})
+title('Espectro', 'Interpreter', 'Latex')
+ylabel('$\vert\hat{S}(f)\vert$', 'Interpreter', 'Latex')
+xlabel('$f$ [Hz]', 'Interpreter', 'Latex')
+% title("$\delta="+num2str(delta*1e6)+" \mu s$, $\sigma_{\tau}="+num2str(rmsds * 1e6)+"\mu s$, Rice$="+num2str(rf_db)+"$dB", 'Interpreter', 'Latex')
+legend('TX')
+ax = gca;
+ax.TickLabelInterpreter = 'latex';
+ax.FontSize = 14;
+grid on
+
 
 signal_rx = zeros(num_samples, num_mpcs);
 for i = 1 : num_mpcs
@@ -307,17 +352,18 @@ for i = 1 : num_mpcs
 end
 
 scattered_signal_rx = sum(signal_rx, 2);
+abs_scat_signal_rx = abs(scattered_signal_rx);
+normalized_signal_rx = (abs_scat_signal_rx - min(abs_scat_signal_rx)) / (max(abs_scat_signal_rx) - min(abs_scat_signal_rx));
 
-figure(9)
+figure(10)
 plot(t, abs(signal_tx), 'Color', 'b', 'Linewidth', 1.5)
 hold on
-plot(t, abs(scattered_signal_rx), 'Color', 'r', 'Linewidth', 1.2)
+plot(t, normalized_signal_rx, 'Color', 'r', 'Linewidth', 1.2)
 xticks(-2*delta:delta:max(t))
 xticklabels({'$-2\delta_t$', '$-\delta_t$', '$0$', '$\delta_t$', '$2\delta_t$', '$3\delta_t$', '$4\delta_t$', '$5\delta_t$', '$6\delta_t$'})
-title('Sinal Transmitido', 'Interpreter', 'Latex')
 ylabel('$s(t)$', 'Interpreter', 'Latex')
 xlabel('$t$ [s]', 'Interpreter', 'Latex')
-title("$\delta=10^{-7} s, \sigma_{\tau}="+num2str(rmsds * 1e9)+"ns$", 'Interpreter', 'Latex')
+title("$\delta="+num2str(delta*1e6)+" \mu s$, $\sigma_{\tau}="+num2str(rmsds * 1e6)+"\mu s$, Rice$="+num2str(rf_db)+"$dB", 'Interpreter', 'Latex')
 legend('TX', 'RX')
 ax = gca;
 ax.TickLabelInterpreter = 'latex';
@@ -325,10 +371,53 @@ ax.FontSize = 14;
 grid on
 
 
+%% Coherency bandwidth and coherency time
+samples = 1e4;
+k = logspace(-3, 10, samples);
+t = logspace(-6, 0, samples);
 
+omega_c = sum( alpha2_n );
+autocorr_freq_n = (1 / omega_c) .* alpha2_n .* exp( -2i * pi * tau_n .* k );
+autocorr_freq = sum(autocorr_freq_n, 1);
 
+autocorr_time_n = (1 / omega_c) .* alpha2_n .* exp( 2i * pi * vn .* t);
+autocorr_time = sum(autocorr_time_n, 1);
 
+figure(11)
+semilogx(k, abs(autocorr_freq), 'Color', 'r', 'Linewidth', 1.5)
+hold on
+yline(0.95, '-.k', 'Linewidth', 1.5)
+yline(0.8, '--k', 'Linewidth', 1.5)
+idx_095_freq = find(autocorr_freq < 0.95, 1,'first');
+idx_08_freq = find(autocorr_freq < 0.8, 1, 'first');
+xline(k(idx_095_freq), '-.k', 'Linewidth', 1.5)
+xline(k(idx_08_freq), '--k', 'Linewidth', 1.5)
+xlim([min(k), max(k)]);
+ylabel('$\vert\rho_{TT}(\kappa, 0)\vert$', 'Interpreter', 'Latex')
+xlabel('$\kappa$ [Hz]', 'Interpreter', 'Latex')
+ax = gca;
+ax.TickLabelInterpreter = 'latex';
+ax.FontSize = 14;
+title("$B_C(0,95)="+sprintf('%.2f', k(idx_095_freq)*1e-6)+"$MHz, $B_C(0,8)="+sprintf('%.2f', k(idx_08_freq)*1e-6)+"$MHz, $\sigma_{\tau}="+num2str(rmsds * 1e6)+"\mu s$, Rice$="+num2str(rf_db)+"$dB", 'Interpreter', 'Latex', 'Fontsize', 10)
+grid on
 
+figure(12)
+semilogx(t, abs(autocorr_time), 'Color', 'r', 'Linewidth', 1.5)
+hold on
+yline(0.95, '-.k', 'Linewidth', 1.5)
+yline(0.8, '--k', 'Linewidth', 1.5)
+idx_095_time = find(autocorr_time < 0.95, 1, 'first');
+idx_08_time = find(autocorr_time < 0.8, 1, 'first');
+xline(t(idx_095_time), '-.k', 'Linewidth', 1.5)
+xline(t(idx_08_time), '--k', 'Linewidth', 1.5)
+xlim([min(t), max(t)]);
+ylabel('$\vert\rho_{TT}(0, \sigma)\vert$', 'Interpreter', 'Latex')
+xlabel('$\sigma$ [s]', 'Interpreter', 'Latex')
+ax = gca;
+ax.TickLabelInterpreter = 'latex';
+ax.FontSize = 14;
+title("$T_C(0,95)="+sprintf('%.2f', t(idx_095_time)*1e3)+"$ms, $T_C(0,8)="+sprintf('%.2f', t(idx_08_time)*1e3)+"$ms, $\sigma_{\tau}="+num2str(rmsds * 1e6)+"\mu s$, Rice$="+num2str(rf_db)+"$dB", 'Interpreter', 'Latex', 'Fontsize', 10)
+grid on
 
 
 % ---------------------------------------
